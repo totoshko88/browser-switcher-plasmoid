@@ -1,6 +1,8 @@
 # Browser Switcher for KDE Plasma 6
 
-![Logo](package/contents/icon.png)
+<p align="center">
+  <img src="package/contents/icon.png" alt="Browser Switcher Icon" width="128">
+</p>
 
 **🚀 Quick default browser switching from the KDE Plasma panel**
 
@@ -207,13 +209,14 @@ Contributions welcome! Please ensure:
 
 ---
 
+
 ## Support
 
-If you find this widget useful, consider supporting development:
+If you find this extension useful, consider supporting development:
 
-[![PayPal](https://img.shields.io/badge/PayPal-Donate-blue?style=for-the-badge&logo=paypal)](https://www.paypal.com/donate/?hosted_button_id=74XBDMNVNMFV8)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support-yellow?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/totoshko88)
-
+[![Ko-Fi](https://img.shields.io/badge/Ko--Fi-Support-ff5e5b?logo=ko-fi)](https://ko-fi.com/totoshko88)
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?logo=paypal)](https://www.paypal.com/qrcodes/p2pqrc/JJLUXRZSQ5V3A)
+[![Monobank](https://img.shields.io/badge/Monobank-UAH-black)](https://send.monobank.ua/jar/2UgaGcQ3JC)
 ---
 
 ## License
