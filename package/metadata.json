@@ -2,13 +2,13 @@
     "KPlugin": {
         "Authors": [
             {
-                "Email": "totoshko88@github.io",
-                "Name": "totoshko88"
+                "Email": "totoshko88@gmail.com",
+                "Name": "Anton Isaiev"
             }
         ],
         "Category": "Utilities",
         "Description": "Quick default browser switching from the system panel. Perfect for users working with different browser profiles.",
-        "Icon": "web-browser",
+        "Icon": "/icon.png",
         "Id": "org.kde.plasma.browserswitcher",
         "Name": "Browser Switcher",
         "Version": "1.0.0",
