@@ -33,6 +33,12 @@
 
 Perfect for users who work with different browser profiles for different tasks — for example, separate work and personal SSO authentication.
 
+<p align="center">
+  <img src="screenshots/up_dark.png" alt="Dark Theme" width="280">
+  &nbsp;&nbsp;
+  <img src="screenshots/up_white.png" alt="Light Theme" width="280">
+</p>
+
 ---
 
 ## Installation
@@ -114,17 +120,12 @@ Contributions welcome! Please ensure:
 
 ## Support
 
-If you find this widget useful, consider supporting development:
+If you find this extension useful, consider supporting development:
 
-<p align="center">
-  <a href="https://www.paypal.com/donate/?hosted_button_id=74XBDMNVNMFV8">
-    <img src="https://img.shields.io/badge/PayPal-Donate-blue?style=for-the-badge&logo=paypal" alt="PayPal">
-  </a>
-  &nbsp;
-  <a href="https://buymeacoffee.com/totoshko88">
-    <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support-yellow?style=for-the-badge&logo=buy-me-a-coffee" alt="Buy Me a Coffee">
-  </a>
-</p>
+[![Ko-Fi](https://img.shields.io/badge/Ko--Fi-Support-ff5e5b?logo=ko-fi)](https://ko-fi.com/totoshko88)
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?logo=paypal)](https://www.paypal.com/qrcodes/p2pqrc/JJLUXRZSQ5V3A)
+[![Monobank](https://img.shields.io/badge/Monobank-UAH-black)](https://send.monobank.ua/jar/2UgaGcQ3JC)
+
 
 ---
 
