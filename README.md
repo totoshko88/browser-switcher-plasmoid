@@ -7,6 +7,7 @@
 [![Release](https://img.shields.io/github/v/release/totoshko88/browser-switcher-plasmoid?style=flat-square)](https://github.com/totoshko88/browser-switcher-plasmoid/releases)
 [![License](https://img.shields.io/github/license/totoshko88/browser-switcher-plasmoid?style=flat-square)](LICENSE)
 ![Plasma 6.0+](https://img.shields.io/badge/Plasma-6.0+-blue?style=flat-square&logo=kde)
+[![KDE Store](https://img.shields.io/badge/KDE%20Store-Get%20It-blue?style=flat-square&logo=kde)](https://www.pling.com/p/2342330/)
 
 ---
 
@@ -54,7 +55,15 @@ Perfect for users who work with different browser profiles for different tasks �
 
 ## Installation
 
-### From GitHub Releases (Recommended)
+### From KDE Store (Recommended)
+
+**https://www.pling.com/p/2342330/**
+
+Or via Plasma UI:
+- Right-click desktop → "Add Widgets..." → "Get New Widgets..." → "Download New Plasma Widgets..."
+- Search for "Browser Switcher"
+
+### From GitHub Releases
 
 1. Download the latest `.plasmoid` file from [Releases](https://github.com/totoshko88/browser-switcher-plasmoid/releases)
 2. Install via terminal:
@@ -195,6 +204,15 @@ Contributions welcome! Please ensure:
 - Code follows KDE QML style guidelines
 - Test on both Wayland and X11
 - Test with Plasma 6.0+
+
+---
+
+## Support
+
+If you find this widget useful, consider supporting development:
+
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-blue?style=for-the-badge&logo=paypal)](https://www.paypal.com/donate/?hosted_button_id=74XBDMNVNMFV8)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support-yellow?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/totoshko88)
 
 ---
 
