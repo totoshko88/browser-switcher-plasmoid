@@ -1,19 +1,44 @@
 # Browser Switcher for KDE Plasma 6
 
-🚀 Quick default browser switching from the KDE Plasma panel.
+![Logo](package/contents/icon.png)
 
-![Browser Switcher](screenshots/preview.png)
+**🚀 Quick default browser switching from the KDE Plasma panel**
+
+[![Release](https://img.shields.io/github/v/release/totoshko88/browser-switcher-plasmoid?style=flat-square)](https://github.com/totoshko88/browser-switcher-plasmoid/releases)
+[![License](https://img.shields.io/github/license/totoshko88/browser-switcher-plasmoid?style=flat-square)](LICENSE)
+![Plasma 6.0+](https://img.shields.io/badge/Plasma-6.0+-blue?style=flat-square&logo=kde)
+
+---
+
+## Screenshots
+
+| Dark Theme | Light Theme |
+|:----------:|:-----------:|
+| ![Dark](screenshots/up_dark.png) | ![Light](screenshots/up_white.png) |
+
+*Seamlessly integrates with your Plasma desktop*
+
+![Installation](screenshots/install.png)
+
+*Easy installation via Plasma widget browser*
+
+---
 
 ## Features
 
 | Feature | Description |
 |---------|-------------|
-| 🚀 Simple & Fast | One-click browser switching |
-| 🎯 Zero Configuration | Works out of the box |
-| 🪶 Lightweight | No external dependencies |
-| 🔄 Auto-Detection | Finds all installed browsers automatically |
-| 🎨 Native Integration | Matches KDE Plasma design |
-| ⚡ Non-Blocking | Async operations for smooth performance |
+| 🚀 **Simple & Fast** | One-click browser switching |
+| 🎯 **Zero Configuration** | Works out of the box |
+| 🪶 **Lightweight** | No external dependencies |
+| 🔄 **Auto-Detection** | Finds all installed browsers automatically |
+| 🎨 **Native Integration** | Matches KDE Plasma design |
+| ⚡ **Non-Blocking** | Async operations for smooth performance |
+| ⌨️ **Keyboard Navigation** | Full arrow key and Enter support |
+| 💾 **Smart Caching** | Faster startup with browser list caching |
+| 🔔 **System Tray Ready** | Can be placed in notification area |
+| 📦 **Package Labels** | Shows Flatpak/Snap indicators |
+| ⚙️ **Configurable** | Customizable refresh interval and behavior |
 
 ## Use Case
 
@@ -23,65 +48,112 @@ Perfect for users who work with different browser profiles for different tasks �
 
 - KDE Plasma 6.0 or later
 - Wayland or X11
-- `xdg-settings` (usually pre-installed)
+- `xdg-settings` (usually pre-installed via `xdg-utils`)
+
+---
 
 ## Installation
 
-### From KDE Store (Recommended)
+### From GitHub Releases (Recommended)
 
-Coming soon...
+1. Download the latest `.plasmoid` file from [Releases](https://github.com/totoshko88/browser-switcher-plasmoid/releases)
+2. Install via terminal:
+   ```bash
+   kpackagetool6 -t Plasma/Applet -i browser-switcher-*.plasmoid
+   ```
+   
+   Or via Plasma UI:
+   - Right-click desktop → "Add Widgets..." → "Get New Widgets..." → "Install from Local File..."
 
-### Manual Installation
+### From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/totoshko88/browser-switcher-kde.git
-cd browser-switcher-kde
+git clone https://github.com/totoshko88/browser-switcher-plasmoid.git
+cd browser-switcher-plasmoid
 
-# Install the plasmoid
+# Install
 ./install.sh
+
+# Or manually
+kpackagetool6 -t Plasma/Applet -i package/
 ```
 
-Or manually:
+### Update Existing Installation
 
 ```bash
-# Install to user directory
-kpackagetool6 -t Plasma/Applet -i package/
-
-# Or update existing installation
 kpackagetool6 -t Plasma/Applet -u package/
 ```
 
-### Uninstallation
+### Uninstall
 
 ```bash
 kpackagetool6 -t Plasma/Applet -r org.kde.plasma.browserswitcher
 ```
+
+---
+
+## Usage
+
+### Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| ↑/↓ | Navigate browser list |
+| Enter | Select highlighted browser |
+| Esc | Close popup |
+
+### Context Menu
+
+Right-click the panel icon for quick access to:
+- **Launch Browser** — Open current default browser
+- **Configure Default Applications** — Opens system settings
+- **Refresh** — Rescan for browsers
+
+### Configuration
+
+Right-click the widget → "Configure..." to access settings:
+
+| Setting | Description |
+|---------|-------------|
+| **Refresh interval** | How often to check for external browser changes (1-60 min) |
+| **Show browser type** | Display Flatpak/Snap labels next to browser names |
+| **Auto-close popup** | Automatically close popup after switching browsers |
+
+---
 
 ## How It Works
 
 ### Browser Detection
 
 Scans XDG directories for `.desktop` files with `WebBrowser` category:
-- `/usr/share/applications/`
-- `/usr/local/share/applications/`
-- `~/.local/share/applications/`
-- `/var/lib/snapd/desktop/applications/` (Snap packages)
-- `/var/lib/flatpak/exports/share/applications/` (Flatpak system)
-- `~/.local/share/flatpak/exports/share/applications/` (Flatpak user)
+
+```
+/usr/share/applications/
+/usr/local/share/applications/
+~/.local/share/applications/
+/var/lib/snapd/desktop/applications/          # Snap
+/var/lib/flatpak/exports/share/applications/  # Flatpak (system)
+~/.local/share/flatpak/exports/share/applications/  # Flatpak (user)
+```
 
 ### Default Browser Management
 
 Uses `xdg-settings` for cross-desktop compatibility:
-- `xdg-settings get default-web-browser` - get current default
-- `xdg-settings set default-web-browser <browser.desktop>` - set default
+
+```bash
+xdg-settings get default-web-browser           # Get current
+xdg-settings set default-web-browser app.desktop  # Set new
+```
+
+---
 
 ## Development
 
 ### Testing
 
 ```bash
-# Test the plasmoid in a window
+# Test in a window
 plasmawindowed org.kde.plasma.browserswitcher
 
 # Or use plasmoidviewer
@@ -91,22 +163,31 @@ plasmoidviewer -a org.kde.plasma.browserswitcher
 ### Project Structure
 
 ```
-browser-switcher-kde/
+browser-switcher-plasmoid/
+├── .github/workflows/        # CI/CD
+│   ├── release.yml           # Build & release on tags
+│   └── validate.yml          # Validate on push/PR
 ├── package/
-│   ├── metadata.json                 # Plasmoid metadata (Plasma 6)
+│   ├── metadata.json         # Plasmoid metadata (Plasma 6)
 │   └── contents/
-│       ├── icons/
-│       │   └── browserswitcher.png   # Widget icon
-│       └── ui/
-│           ├── main.qml              # Main entry point & logic
-│           ├── CompactRepresentation.qml  # Panel icon
-│           ├── FullRepresentation.qml     # Popup menu
-│           └── BrowserDelegate.qml        # List item delegate
-├── install.sh                        # Installation script
-├── uninstall.sh                      # Uninstallation script
-├── README.md
-└── LICENSE
+│       ├── icon.png          # Widget icon
+│       ├── config/           # Configuration
+│       ├── locale/           # Translations
+│       └── ui/               # QML components
+├── screenshots/              # README images
+├── scripts/                  # Helper scripts
+├── install.sh
+├── uninstall.sh
+└── README.md
 ```
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for full version history.
+
+---
 
 ## Contributing
 
@@ -115,9 +196,13 @@ Contributions welcome! Please ensure:
 - Test on both Wayland and X11
 - Test with Plasma 6.0+
 
+---
+
 ## License
 
 GPL-3.0 — Made with ❤️ in Ukraine 🇺🇦
+
+---
 
 ## Credits
 
