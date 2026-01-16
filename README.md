@@ -1,29 +1,20 @@
-# Browser Switcher for KDE Plasma 6
+# KDE Plasma Browser Switcher
 
 <p align="center">
-  <img src="package/contents/icon.png" alt="Browser Switcher Icon" width="128">
+  <img src="package/contents/icon.png" alt="Browser Switcher Logo" width="128" height="128">
 </p>
 
-**🚀 Quick default browser switching from the KDE Plasma panel**
+<p align="center">
+  <strong>One-click default browser switching from the KDE Plasma panel</strong>
+</p>
 
-[![Release](https://img.shields.io/github/v/release/totoshko88/browser-switcher-plasmoid?style=flat-square)](https://github.com/totoshko88/browser-switcher-plasmoid/releases)
-[![License](https://img.shields.io/github/license/totoshko88/browser-switcher-plasmoid?style=flat-square)](LICENSE)
-![Plasma 6.0+](https://img.shields.io/badge/Plasma-6.0+-blue?style=flat-square&logo=kde)
-[![KDE Store](https://img.shields.io/badge/KDE%20Store-Get%20It-blue?style=flat-square&logo=kde)](https://www.pling.com/p/2342330/)
-
----
-
-## Screenshots
-
-| Dark Theme | Light Theme |
-|:----------:|:-----------:|
-| ![Dark](screenshots/up_dark.png) | ![Light](screenshots/up_white.png) |
-
-*Seamlessly integrates with your Plasma desktop*
-
-![Installation](screenshots/install.png)
-
-*Easy installation via Plasma widget browser*
+<p align="center">
+  <a href="#installation">Installation</a> •
+  <a href="#features">Features</a> •
+  <a href="#requirements">Requirements</a> •
+  <a href="#development">Development</a> •
+  <a href="#support">Support</a>
+</p>
 
 ---
 
@@ -31,27 +22,16 @@
 
 | Feature | Description |
 |---------|-------------|
-| 🚀 **Simple & Fast** | One-click browser switching |
-| 🎯 **Zero Configuration** | Works out of the box |
-| 🪶 **Lightweight** | No external dependencies |
-| 🔄 **Auto-Detection** | Finds all installed browsers automatically |
-| 🎨 **Native Integration** | Matches KDE Plasma design |
-| ⚡ **Non-Blocking** | Async operations for smooth performance |
-| ⌨️ **Keyboard Navigation** | Full arrow key and Enter support |
-| 💾 **Smart Caching** | Faster startup with browser list caching |
-| 🔔 **System Tray Ready** | Can be placed in notification area |
-| 📦 **Package Labels** | Shows Flatpak/Snap indicators |
-| ⚙️ **Configurable** | Customizable refresh interval and behavior |
+| 🚀 Simple & Fast | One-click browser switching |
+| 🎯 Zero Configuration | Works out of the box |
+| 🪶 Lightweight | No external dependencies |
+| 🔄 Auto-Detection | Finds all installed browsers automatically |
+| 🎨 Native Integration | Matches KDE Plasma design |
+| ⚡ Non-Blocking | Async operations for smooth performance |
 
-## Use Case
+### Use Case
 
 Perfect for users who work with different browser profiles for different tasks — for example, separate work and personal SSO authentication.
-
-## Requirements
-
-- KDE Plasma 6.0 or later
-- Wayland or X11
-- `xdg-settings` (usually pre-installed via `xdg-utils`)
 
 ---
 
@@ -62,41 +42,22 @@ Perfect for users who work with different browser profiles for different tasks �
 **https://www.pling.com/p/2342330/**
 
 Or via Plasma UI:
-- Right-click desktop → "Add Widgets..." → "Get New Widgets..." → "Download New Plasma Widgets..."
-- Search for "Browser Switcher"
+1. Right-click desktop → **"Add Widgets..."**
+2. Click **"Get New Widgets..."** → **"Download New Plasma Widgets..."**
+3. Search for **"Browser Switcher"**
 
-### From GitHub Releases
+### Manual Installation
 
-1. Download the latest `.plasmoid` file from [Releases](https://github.com/totoshko88/browser-switcher-plasmoid/releases)
-2. Install via terminal:
+1. Download the latest release from [Releases](https://github.com/totoshko88/browser-switcher-plasmoid/releases)
+
+2. Install and enable:
    ```bash
    kpackagetool6 -t Plasma/Applet -i browser-switcher-*.plasmoid
    ```
-   
-   Or via Plasma UI:
-   - Right-click desktop → "Add Widgets..." → "Get New Widgets..." → "Install from Local File..."
 
-### From Source
+3. Add widget to panel or desktop
 
-```bash
-# Clone the repository
-git clone https://github.com/totoshko88/browser-switcher-plasmoid.git
-cd browser-switcher-plasmoid
-
-# Install
-./install.sh
-
-# Or manually
-kpackagetool6 -t Plasma/Applet -i package/
-```
-
-### Update Existing Installation
-
-```bash
-kpackagetool6 -t Plasma/Applet -u package/
-```
-
-### Uninstall
+### Uninstallation
 
 ```bash
 kpackagetool6 -t Plasma/Applet -r org.kde.plasma.browserswitcher
@@ -104,64 +65,28 @@ kpackagetool6 -t Plasma/Applet -r org.kde.plasma.browserswitcher
 
 ---
 
-## Usage
+## Requirements
 
-### Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| ↑/↓ | Navigate browser list |
-| Enter | Select highlighted browser |
-| Esc | Close popup |
-
-### Context Menu
-
-Right-click the panel icon for quick access to:
-- **Launch Browser** — Open current default browser
-- **Configure Default Applications** — Opens system settings
-- **Refresh** — Rescan for browsers
-
-### Configuration
-
-Right-click the widget → "Configure..." to access settings:
-
-| Setting | Description |
-|---------|-------------|
-| **Refresh interval** | How often to check for external browser changes (1-60 min) |
-| **Show browser type** | Display Flatpak/Snap labels next to browser names |
-| **Auto-close popup** | Automatically close popup after switching browsers |
+- KDE Plasma 6.0 or later
+- Wayland or X11
+- `xdg-settings` (usually pre-installed via `xdg-utils`)
 
 ---
 
 ## How It Works
 
-### Browser Detection
+**Browser Detection:** Scans XDG directories for `.desktop` files with `WebBrowser` category:
+- `/usr/share/applications/`
+- `~/.local/share/applications/`
+- Flatpak and Snap application directories
 
-Scans XDG directories for `.desktop` files with `WebBrowser` category:
-
-```
-/usr/share/applications/
-/usr/local/share/applications/
-~/.local/share/applications/
-/var/lib/snapd/desktop/applications/          # Snap
-/var/lib/flatpak/exports/share/applications/  # Flatpak (system)
-~/.local/share/flatpak/exports/share/applications/  # Flatpak (user)
-```
-
-### Default Browser Management
-
-Uses `xdg-settings` for cross-desktop compatibility:
-
-```bash
-xdg-settings get default-web-browser           # Get current
-xdg-settings set default-web-browser app.desktop  # Set new
-```
+**Default Browser Management:** Uses `xdg-settings` for cross-desktop compatibility.
 
 ---
 
 ## Development
 
-### Testing
+### Local Testing
 
 ```bash
 # Test in a window
@@ -171,36 +96,14 @@ plasmawindowed org.kde.plasma.browserswitcher
 plasmoidviewer -a org.kde.plasma.browserswitcher
 ```
 
-### Project Structure
+### Building Release
 
-```
-browser-switcher-plasmoid/
-├── .github/workflows/        # CI/CD
-│   ├── release.yml           # Build & release on tags
-│   └── validate.yml          # Validate on push/PR
-├── package/
-│   ├── metadata.json         # Plasmoid metadata (Plasma 6)
-│   └── contents/
-│       ├── icon.png          # Widget icon
-│       ├── config/           # Configuration
-│       ├── locale/           # Translations
-│       └── ui/               # QML components
-├── screenshots/              # README images
-├── scripts/                  # Helper scripts
-├── install.sh
-├── uninstall.sh
-└── README.md
+```bash
+cd package
+zip -r ../browser-switcher.plasmoid . -x "*.git*"
 ```
 
----
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for full version history.
-
----
-
-## Contributing
+### Contributing
 
 Contributions welcome! Please ensure:
 - Code follows KDE QML style guidelines
@@ -209,22 +112,22 @@ Contributions welcome! Please ensure:
 
 ---
 
-
 ## Support
 
-If you find this extension useful, consider supporting development:
+If you find this widget useful, consider supporting development:
 
-[![Ko-Fi](https://img.shields.io/badge/Ko--Fi-Support-ff5e5b?logo=ko-fi)](https://ko-fi.com/totoshko88)
-[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?logo=paypal)](https://www.paypal.com/qrcodes/p2pqrc/JJLUXRZSQ5V3A)
-[![Monobank](https://img.shields.io/badge/Monobank-UAH-black)](https://send.monobank.ua/jar/2UgaGcQ3JC)
+<p align="center">
+  <a href="https://www.paypal.com/donate/?hosted_button_id=74XBDMNVNMFV8">
+    <img src="https://img.shields.io/badge/PayPal-Donate-blue?style=for-the-badge&logo=paypal" alt="PayPal">
+  </a>
+  &nbsp;
+  <a href="https://buymeacoffee.com/totoshko88">
+    <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support-yellow?style=for-the-badge&logo=buy-me-a-coffee" alt="Buy Me a Coffee">
+  </a>
+</p>
+
 ---
 
 ## License
 
 GPL-3.0 — Made with ❤️ in Ukraine 🇺🇦
-
----
-
-## Credits
-
-Based on the [GNOME Browser Switcher](https://github.com/totoshko88/browser-switcher) extension.
