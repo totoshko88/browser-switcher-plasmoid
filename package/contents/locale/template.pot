@@ -1,0 +1,166 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2024 Anton Isaiev
+# This file is distributed under the same license as the Browser Switcher package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: org.kde.plasma.browserswitcher 1.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/totoshko88/browser-switcher-plasmoid/issues\n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: main.qml
+msgid "Browser Switcher"
+msgstr ""
+
+#: main.qml
+msgid "Loading..."
+msgstr ""
+
+#: main.qml
+msgid "Current: %1"
+msgstr ""
+
+#: main.qml
+msgid "No default browser set"
+msgstr ""
+
+#: main.qml
+msgid "Configure Default Applications..."
+msgstr ""
+
+#: main.qml
+msgid "Refresh"
+msgstr ""
+
+#: main.qml
+msgid "Launch Browser"
+msgstr ""
+
+#: main.qml
+msgid "Operation timed out. Please try again."
+msgstr ""
+
+#: main.qml
+msgid "xdg-settings not found. Please install xdg-utils package."
+msgstr ""
+
+#: main.qml
+msgid "No default browser set"
+msgstr ""
+
+#: main.qml
+msgid "Failed to launch browser. Please check your default browser settings."
+msgstr ""
+
+#: main.qml
+msgid "Default browser changed externally to %1"
+msgstr ""
+
+#: main.qml
+msgid "Browser not found. It may have been uninstalled."
+msgstr ""
+
+#: main.qml
+msgid "Failed to set default browser. Check permissions."
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Refresh browser list"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Switching browser, please wait"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Switching browser..."
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Default browser changed to %1"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Error"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Try Again"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "No browsers found"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Install a web browser to use this widget"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Available browsers"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "%1, current default browser"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Set %1 as default browser"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Launch"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Launch current browser"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Open the current default web browser"
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Configure..."
+msgstr ""
+
+#: FullRepresentation.qml
+msgid "Open system settings to configure default applications"
+msgstr ""
+
+#: CompactRepresentation.qml
+msgid "Click to switch default web browser"
+msgstr ""
+
+#: BrowserDelegate.qml
+msgid "%1 (current)"
+msgstr ""
+
+#: config.qml
+msgid "Refresh interval (minutes):"
+msgstr ""
+
+#: config.qml
+msgid "Show browser type:"
+msgstr ""
+
+#: config.qml
+msgid "Display Flatpak/Snap labels"
+msgstr ""
+
+#: config.qml
+msgid "Auto-close popup:"
+msgstr ""
+
+#: config.qml
+msgid "Close after switching browser"
+msgstr ""

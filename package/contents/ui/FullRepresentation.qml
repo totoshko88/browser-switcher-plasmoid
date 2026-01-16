@@ -16,10 +16,12 @@ PlasmaExtras.Representation {
     property bool isLoading: false
     property bool isSwitching: false
     property string errorMessage: ""
+    property bool showBrowserType: true
 
     signal browserSelected(string browserId)
     signal refreshRequested()
     signal configureRequested()
+    signal launchRequested()
 
     Layout.minimumWidth: Kirigami.Units.gridUnit * 16
     Layout.minimumHeight: Kirigami.Units.gridUnit * 8
@@ -80,6 +82,10 @@ PlasmaExtras.Representation {
         visible: isSwitching && !isLoading
         z: 10
 
+        // Accessibility announcement for screen readers
+        Accessible.role: Accessible.AlertMessage
+        Accessible.name: i18n("Switching browser, please wait")
+
         Rectangle {
             anchors.fill: parent
             color: Kirigami.Theme.backgroundColor
@@ -102,6 +108,39 @@ PlasmaExtras.Representation {
         }
     }
 
+    // Success announcement for screen readers (invisible, only for accessibility)
+    Item {
+        id: successAnnouncement
+        visible: false
+        Accessible.role: Accessible.AlertMessage
+        Accessible.name: ""
+
+        function announce(browserName) {
+            Accessible.name = i18n("Default browser changed to %1", browserName)
+            visible = true
+            announcementTimer.start()
+        }
+
+        Timer {
+            id: announcementTimer
+            interval: 3000
+            onTriggered: {
+                successAnnouncement.visible = false
+                successAnnouncement.Accessible.name = ""
+            }
+        }
+    }
+
+    // Watch for successful browser switch to announce
+    onLastSelectedBrowserIdChanged: {
+        if (lastSelectedBrowserId && lastSelectedBrowserId === currentBrowserId) {
+            var browser = browsers.find(b => b.id === currentBrowserId)
+            if (browser) {
+                successAnnouncement.announce(browser.name)
+            }
+        }
+    }
+
     // Error message
     PlasmaExtras.PlaceholderMessage {
         anchors.centerIn: parent
@@ -111,7 +150,7 @@ PlasmaExtras.Representation {
         text: i18n("Error")
         explanation: errorMessage
 
-        helpfulAction: PlasmaComponents.Action {
+        helpfulAction: Kirigami.Action {
             text: i18n("Try Again")
             icon.name: "view-refresh"
             onTriggered: fullRoot.refreshRequested()
@@ -143,6 +182,10 @@ PlasmaExtras.Representation {
         highlightMoveDuration: Kirigami.Units.shortDuration
         currentIndex: -1
 
+        // Accessibility
+        Accessible.role: Accessible.List
+        Accessible.name: i18n("Available browsers")
+
         // Focus management
         activeFocusOnTab: true
         onActiveFocusChanged: {
@@ -153,13 +196,11 @@ PlasmaExtras.Representation {
 
         delegate: BrowserDelegate {
             width: browserList.width
-            browserId: modelData.id
-            browserName: modelData.name
-            browserIcon: modelData.icon || "web-browser"
             isCurrentBrowser: modelData.id === currentBrowserId
             isJustSelected: modelData.id === lastSelectedBrowserId
             enabled: !isSwitching
             highlighted: ListView.isCurrentItem || isCurrentBrowser
+            showType: showBrowserType
 
             onClicked: {
                 browserList.currentIndex = index
@@ -183,14 +224,38 @@ PlasmaExtras.Representation {
         position: PlasmaComponents.ToolBar.Footer
         visible: !isLoading && browsers.length > 0 && errorMessage.length === 0
 
-        PlasmaComponents.ToolButton {
-            anchors.centerIn: parent
-            text: i18n("Configure Default Applications...")
-            icon.name: "configure"
-            onClicked: fullRoot.configureRequested()
+        RowLayout {
+            anchors.fill: parent
+            spacing: Kirigami.Units.smallSpacing
 
-            Accessible.name: text
-            Accessible.description: i18n("Open system settings to configure default applications")
+            PlasmaComponents.ToolButton {
+                icon.name: "internet-web-browser"
+                text: i18n("Launch")
+                enabled: currentBrowserId.length > 0
+                onClicked: fullRoot.launchRequested()
+
+                Accessible.name: i18n("Launch current browser")
+                Accessible.description: i18n("Open the current default web browser")
+
+                PlasmaComponents.ToolTip {
+                    text: i18n("Launch current browser")
+                }
+            }
+
+            Item { Layout.fillWidth: true }
+
+            PlasmaComponents.ToolButton {
+                icon.name: "configure"
+                text: i18n("Configure...")
+                onClicked: fullRoot.configureRequested()
+
+                Accessible.name: i18n("Configure Default Applications")
+                Accessible.description: i18n("Open system settings to configure default applications")
+
+                PlasmaComponents.ToolTip {
+                    text: i18n("Configure Default Applications")
+                }
+            }
         }
     }
 }

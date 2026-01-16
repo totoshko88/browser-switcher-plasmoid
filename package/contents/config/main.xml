@@ -7,8 +7,20 @@
     
     <group name="General">
         <entry name="browserCache" type="String">
-            <label>Cached browser list for faster startup</label>
+            <label>Cached browser list for faster startup (internal)</label>
             <default></default>
+        </entry>
+        <entry name="refreshInterval" type="Int">
+            <label>Interval in minutes to check for external browser changes</label>
+            <default>5</default>
+        </entry>
+        <entry name="showBrowserType" type="Bool">
+            <label>Show Flatpak/Snap labels next to browser names</label>
+            <default>true</default>
+        </entry>
+        <entry name="autoClosePopup" type="Bool">
+            <label>Automatically close popup after switching browser</label>
+            <default>true</default>
         </entry>
     </group>
 </kcfg>

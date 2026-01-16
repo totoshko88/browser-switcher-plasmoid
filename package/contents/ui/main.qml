@@ -4,8 +4,10 @@
 import QtQuick
 import QtQuick.Layouts
 import org.kde.plasma.plasmoid
-import org.kde.kirigami as Kirigami
 import org.kde.plasma.core as PlasmaCore
+import org.kde.kirigami as Kirigami
+import org.kde.plasma.plasma5support as P5S
+import org.kde.notification as Notification
 
 PlasmoidItem {
     id: root
@@ -19,14 +21,23 @@ PlasmoidItem {
     property string errorMessage: ""
     property string pendingBrowserId: ""
     property string lastSelectedBrowserId: ""
+    property bool xdgSettingsAvailable: true
 
     // Browser detection state
     property var pendingDesktopFiles: []
     property var parsedBrowsers: []
     property var seenExecs: ({})
 
+    // Command callbacks for the executable DataSource
+    property var commandCallbacks: ({})
+
     // Cache key for localStorage
     readonly property string cacheKey: "browserSwitcher_browserCache"
+
+    // Configuration bindings
+    readonly property int refreshIntervalMs: Plasmoid.configuration.refreshInterval * 60000
+    readonly property bool showBrowserType: Plasmoid.configuration.showBrowserType
+    readonly property bool autoClosePopup: Plasmoid.configuration.autoClosePopup
 
     // Compact representation (icon in panel/tray)
     compactRepresentation: CompactRepresentation {
@@ -42,9 +53,11 @@ PlasmoidItem {
         isLoading: root.isLoading
         isSwitching: root.isSwitching
         errorMessage: root.errorMessage
+        showBrowserType: root.showBrowserType
         onBrowserSelected: (browserId) => root.setDefaultBrowser(browserId)
         onRefreshRequested: root.refresh()
         onConfigureRequested: root.openSystemSettings()
+        onLaunchRequested: root.launchCurrentBrowser()
     }
 
     // Prefer compact representation in panel
@@ -77,6 +90,12 @@ PlasmoidItem {
             icon.name: "view-refresh"
             enabled: !root.isLoading && !root.isSwitching
             onTriggered: root.refresh()
+        },
+        PlasmaCore.Action {
+            text: i18n("Launch Browser")
+            icon.name: root.currentBrowserIcon
+            enabled: root.currentBrowserId.length > 0
+            onTriggered: root.launchCurrentBrowser()
         }
     ]
 
@@ -97,7 +116,9 @@ PlasmoidItem {
         id: closeTimer
         interval: 600
         onTriggered: {
-            root.expanded = false
+            if (root.autoClosePopup) {
+                root.expanded = false
+            }
             lastSelectedBrowserId = ""
         }
     }
@@ -105,7 +126,7 @@ PlasmoidItem {
     // Timer for periodic refresh (monitors external changes)
     Timer {
         id: refreshTimer
-        interval: 300000 // Check every 5 minutes (reduced from 60s)
+        interval: root.refreshIntervalMs
         repeat: true
         running: true
         onTriggered: {
@@ -122,9 +143,70 @@ PlasmoidItem {
         onTriggered: lastSelectedBrowserId = ""
     }
 
+    // Retry timer for transient failures
+    Timer {
+        id: retryTimer
+        interval: 500
+        property string browserId: ""
+        property int retryCount: 0
+        onTriggered: {
+            if (browserId && retryCount < 3) {
+                setDefaultBrowserInternal(browserId, retryCount)
+            }
+        }
+    }
+
+    // Reusable DataSource for command execution (avoids memory leaks from Qt.createQmlObject)
+    P5S.DataSource {
+        id: executable
+        engine: "executable"
+        connectedSources: []
+
+        onNewData: (sourceName, data) => {
+            var stdout = data["stdout"]?.trim() ?? ""
+            var exitCode = data["exit code"] ?? -1
+            disconnectSource(sourceName)
+
+            if (root.commandCallbacks[sourceName]) {
+                root.commandCallbacks[sourceName](stdout, exitCode)
+                delete root.commandCallbacks[sourceName]
+            }
+        }
+    }
+
+    // Notification component for user feedback
+    Notification.Notification {
+        id: notification
+        componentName: "plasma_workspace"
+        eventId: "notification"
+        title: i18n("Browser Switcher")
+    }
+
     Component.onCompleted: {
         loadCachedBrowsers()
-        refresh()
+        checkXdgSettings()
+    }
+
+    // Show notification to user
+    function showNotification(message, isError) {
+        notification.text = message
+        notification.iconName = isError ? "dialog-error" : "dialog-information"
+        notification.sendEvent()
+    }
+
+    // Check if xdg-settings is available
+    function checkXdgSettings() {
+        runCommand("which xdg-settings", (stdout, exitCode) => {
+            if (exitCode !== 0 || !stdout) {
+                xdgSettingsAvailable = false
+                errorMessage = i18n("xdg-settings not found. Please install xdg-utils package.")
+                isLoading = false
+                console.error("Browser Switcher: xdg-settings not available")
+            } else {
+                xdgSettingsAvailable = true
+                refresh()
+            }
+        })
     }
 
     // Load cached browsers for faster startup
@@ -143,6 +225,21 @@ PlasmoidItem {
         }
     }
 
+    // Launch the current default browser
+    function launchCurrentBrowser() {
+        if (!currentBrowserId) {
+            showNotification(i18n("No default browser set"), true)
+            return
+        }
+
+        runCommand("xdg-open https://", (stdout, exitCode) => {
+            if (exitCode !== 0) {
+                showNotification(i18n("Failed to launch browser. Please check your default browser settings."), true)
+                console.error("Browser Switcher: Failed to launch browser, exit code:", exitCode)
+            }
+        })
+    }
+
     // Save browsers to cache
     function saveBrowserCache() {
         try {
@@ -155,6 +252,10 @@ PlasmoidItem {
 
     // Refresh browser list and current default
     function refresh() {
+        if (!xdgSettingsAvailable) {
+            checkXdgSettings()
+            return
+        }
         isLoading = true
         errorMessage = ""
         parsedBrowsers = []
@@ -166,12 +267,15 @@ PlasmoidItem {
 
     // Silent refresh - only check current default without full rescan
     function silentRefreshDefault() {
-        runCommand("xdg-settings get default-web-browser", function(stdout, exitCode) {
+        runCommand("xdg-settings get default-web-browser", (stdout, exitCode) => {
             if (exitCode === 0 && stdout && stdout.length > 0) {
                 var newBrowserId = stdout.trim()
                 if (currentBrowserId !== newBrowserId) {
                     currentBrowserId = newBrowserId
                     updateIcon()
+                    var browser = browsers.find(b => b.id === newBrowserId)
+                    var browserName = browser?.name ?? newBrowserId
+                    showNotification(i18n("Default browser changed externally to %1", browserName), false)
                     console.log("Browser Switcher: External change detected, new default:", newBrowserId)
                 }
             }
@@ -180,33 +284,30 @@ PlasmoidItem {
 
     // Open system default applications settings
     function openSystemSettings() {
-        runCommand("kcmshell6 kcm_componentchooser 2>/dev/null || kcmshell5 componentchooser 2>/dev/null || systemsettings kcm_componentchooser", function(stdout, exitCode) {
+        runCommand("kcmshell6 kcm_componentchooser 2>/dev/null || kcmshell5 componentchooser 2>/dev/null || systemsettings kcm_componentchooser", (stdout, exitCode) => {
             // Fire and forget - settings window opens independently
         })
     }
 
-    // Generic command runner using Process
+    // Generic command runner using the declared DataSource
     function runCommand(command, callback) {
-        var process = Qt.createQmlObject(
-            'import QtQuick; import org.kde.plasma.plasma5support as P5S; P5S.DataSource { engine: "executable" }',
-            root, "processRunner"
-        )
-
-        process.onNewData.connect(function(sourceName, data) {
-            var stdout = data["stdout"] ? data["stdout"].trim() : ""
-            var exitCode = data["exit code"] !== undefined ? data["exit code"] : -1
-            process.disconnectSource(sourceName)
-            process.destroy()
-            if (callback) callback(stdout, exitCode)
-        })
-
-        process.connectSource(command)
+        if (callback) {
+            commandCallbacks[command] = callback
+        }
+        executable.connectSource(command)
     }
 
     // Escape shell argument to prevent injection
     function escapeShellArg(arg) {
         if (!arg) return "''"
         return "'" + String(arg).replace(/'/g, "'\\''") + "'"
+    }
+
+    // Detect browser type from path
+    function detectBrowserType(filePath) {
+        if (filePath.includes("/flatpak/")) return "Flatpak"
+        if (filePath.includes("/snapd/")) return "Snap"
+        return ""
     }
 
     // Detect installed browsers by finding .desktop files with WebBrowser category
@@ -223,7 +324,7 @@ PlasmoidItem {
         var cmd = "find " + searchPaths.join(" ") + " -maxdepth 1 -name '*.desktop' -type f 2>/dev/null | " +
                   "xargs grep -l 'WebBrowser' 2>/dev/null || echo ''"
 
-        runCommand(cmd, function(stdout, exitCode) {
+        runCommand(cmd, (stdout, exitCode) => {
             handleBrowserDetection(stdout)
         })
     }
@@ -236,7 +337,7 @@ PlasmoidItem {
             return
         }
 
-        var files = stdout.split('\n').filter(function(f) { return f && f.length > 0 })
+        var files = stdout.split('\n').filter(f => f && f.length > 0)
 
         if (files.length === 0) {
             finishBrowserDetection()
@@ -248,12 +349,13 @@ PlasmoidItem {
 
         // Parse each desktop file
         for (var i = 0; i < files.length; i++) {
-            (function(filePath) {
+            ((filePath) => {
                 var cmd = "cat " + escapeShellArg(filePath)
-                runCommand(cmd, function(content, exitCode) {
+                runCommand(cmd, (content, exitCode) => {
                     if (exitCode === 0 && content) {
                         var fileName = filePath.split('/').pop()
-                        var browser = parseDesktopFile(content, fileName)
+                        var browserType = detectBrowserType(filePath)
+                        var browser = parseDesktopFile(content, fileName, browserType)
                         if (browser && !seenExecs[browser.exec]) {
                             parsedBrowsers.push(browser)
                             seenExecs[browser.exec] = true
@@ -270,7 +372,7 @@ PlasmoidItem {
     }
 
     // Parse desktop file content
-    function parseDesktopFile(content, fileName) {
+    function parseDesktopFile(content, fileName, browserType) {
         var lines = content.split('\n')
         var entry = {}
         var inDesktopEntry = false
@@ -316,7 +418,8 @@ PlasmoidItem {
             id: fileName,
             name: entry.Name || fileName.replace('.desktop', ''),
             icon: entry.Icon || 'web-browser',
-            exec: entry.Exec ? entry.Exec.split(' ')[0] : ''
+            exec: entry.Exec ? entry.Exec.split(' ')[0] : '',
+            type: browserType
         }
     }
 
@@ -325,7 +428,7 @@ PlasmoidItem {
         commandTimeout.stop()
 
         // Sort browsers alphabetically
-        parsedBrowsers.sort(function(a, b) { return a.name.localeCompare(b.name) })
+        parsedBrowsers.sort((a, b) => a.name.localeCompare(b.name))
         browsers = parsedBrowsers
 
         // Save to cache for faster startup next time
@@ -340,7 +443,7 @@ PlasmoidItem {
     // Get current default browser
     function getCurrentDefaultBrowser() {
         commandTimeout.restart()
-        runCommand("xdg-settings get default-web-browser", function(stdout, exitCode) {
+        runCommand("xdg-settings get default-web-browser", (stdout, exitCode) => {
             commandTimeout.stop()
             handleGetDefaultBrowser(stdout, exitCode)
         })
@@ -368,23 +471,66 @@ PlasmoidItem {
             return
         }
 
-        var browser = browsers.find(function(b) { return b.id === currentBrowserId })
-        currentBrowserIcon = (browser && browser.icon) ? browser.icon : "web-browser"
+        var browser = browsers.find(b => b.id === currentBrowserId)
+        currentBrowserIcon = browser?.icon ?? "web-browser"
     }
 
-    // Set default browser
+    // Verify browser desktop file exists before switching
+    function verifyBrowserExists(browserId, callback) {
+        var searchPaths = [
+            "/usr/share/applications/" + browserId,
+            "/usr/local/share/applications/" + browserId,
+            "$HOME/.local/share/applications/" + browserId,
+            "/var/lib/snapd/desktop/applications/" + browserId,
+            "/var/lib/flatpak/exports/share/applications/" + browserId,
+            "$HOME/.local/share/flatpak/exports/share/applications/" + browserId
+        ]
+        var cmd = "test -f " + searchPaths.map(p => escapeShellArg(p)).join(" -o -f ") + " && echo 'exists'"
+        runCommand(cmd, (stdout, exitCode) => {
+            callback(stdout.indexOf("exists") !== -1)
+        })
+    }
+
+    // Set default browser (public API)
     function setDefaultBrowser(browserId) {
         if (isSwitching || isLoading) return
+        setDefaultBrowserInternal(browserId, 0)
+    }
 
+    // Internal browser switching with retry support
+    function setDefaultBrowserInternal(browserId, retryCount) {
         isSwitching = true
         errorMessage = ""
         pendingBrowserId = browserId
         lastSelectedBrowserId = browserId
         commandTimeout.restart()
 
-        runCommand("xdg-settings set default-web-browser " + escapeShellArg(browserId), function(stdout, exitCode) {
-            commandTimeout.stop()
-            handleSetDefaultBrowser(exitCode === 0)
+        // Verify the browser still exists before attempting to switch
+        verifyBrowserExists(browserId, (exists) => {
+            if (!exists) {
+                commandTimeout.stop()
+                isSwitching = false
+                errorMessage = i18n("Browser not found. It may have been uninstalled.")
+                lastSelectedBrowserId = ""
+                showNotification(errorMessage, true)
+                // Refresh the list to remove stale entries
+                refresh()
+                return
+            }
+
+            runCommand("xdg-settings set default-web-browser " + escapeShellArg(browserId), (stdout, exitCode) => {
+                commandTimeout.stop()
+
+                if (exitCode !== 0 && retryCount < 2) {
+                    console.log("Browser Switcher: Retry", retryCount + 1, "for", browserId)
+                    retryTimer.browserId = browserId
+                    retryTimer.retryCount = retryCount + 1
+                    retryTimer.start()
+                    return
+                }
+
+                handleSetDefaultBrowser(exitCode === 0)
+            })
         })
     }
 
@@ -397,10 +543,12 @@ PlasmoidItem {
             updateIcon()
             errorMessage = ""
             closeTimer.start()
+            var browser = browsers.find(b => b.id === pendingBrowserId)
             console.log("Browser Switcher: Successfully set default browser to", pendingBrowserId)
         } else if (!success) {
             errorMessage = i18n("Failed to set default browser. Check permissions.")
             lastSelectedBrowserId = ""
+            showNotification(errorMessage, true)
             console.error("Browser Switcher: Failed to set default browser to", pendingBrowserId)
         }
 
