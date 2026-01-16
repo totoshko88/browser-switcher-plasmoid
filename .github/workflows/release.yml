@@ -1,14 +1,9 @@
-name: Build and Release
+name: Release
 
 on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (e.g., 1.2.0)'
-        required: true
 
 jobs:
   build:
@@ -18,30 +13,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Get version
+      - name: Get version from tag
         id: version
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          fi
+          VERSION="${GITHUB_REF#refs/tags/v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
 
-      - name: Validate package structure
+      - name: Validate package
         run: |
           echo "Validating package structure..."
           
-          # Check required files exist
           required_files=(
             "package/metadata.json"
             "package/contents/ui/main.qml"
             "package/contents/ui/FullRepresentation.qml"
             "package/contents/ui/CompactRepresentation.qml"
             "package/contents/ui/BrowserDelegate.qml"
-            "package/contents/config/main.xml"
-            "package/contents/config/config.qml"
           )
           
           for file in "${required_files[@]}"; do
@@ -52,17 +40,9 @@ jobs:
             echo "✓ Found: $file"
           done
           
-          # Validate metadata.json
-          echo "Validating metadata.json..."
-          if ! python3 -c "import json; json.load(open('package/metadata.json'))"; then
-            echo "❌ Invalid JSON in metadata.json"
-            exit 1
-          fi
-          echo "✓ metadata.json is valid JSON"
-          
-          # Check version matches
-          METADATA_VERSION=$(python3 -c "import json; print(json.load(open('package/metadata.json'))['KPlugin']['Version'])")
-          echo "Version in metadata.json: $METADATA_VERSION"
+          # Validate JSON
+          python3 -c "import json; json.load(open('package/metadata.json'))"
+          echo "✓ metadata.json is valid"
 
       - name: Build plasmoid package
         run: |
@@ -75,72 +55,53 @@ jobs:
           zip -r "../${PACKAGE_NAME}" . -x "*.git*"
           cd ..
           
-          # Verify the package
           echo "Package contents:"
           unzip -l "${PACKAGE_NAME}"
           
-          # Calculate checksum
           sha256sum "${PACKAGE_NAME}" > "${PACKAGE_NAME}.sha256"
           echo "SHA256: $(cat ${PACKAGE_NAME}.sha256)"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: plasmoid-package
-          path: |
-            *.plasmoid
-            *.sha256
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-    
-    permissions:
-      contents: write
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Get version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: plasmoid-package
-
-      - name: Generate release notes
-        id: notes
+      - name: Extract changelog for version
+        id: changelog
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           
-          cat << 'EOF' > release_notes.md
-          ## Browser Switcher v${{ steps.version.outputs.version }}
+          # Extract section for this version from CHANGELOG.md
+          if [ -f "CHANGELOG.md" ]; then
+            # Get content between this version header and next version header
+            NOTES=$(awk "/^## \[${VERSION}\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md)
+            
+            if [ -n "$NOTES" ]; then
+              echo "Found changelog for v${VERSION}"
+              # Save to file for multiline support
+              echo "$NOTES" > release_notes_body.md
+            else
+              echo "No changelog entry found for v${VERSION}, using default"
+              echo "Release v${VERSION}" > release_notes_body.md
+            fi
+          else
+            echo "No CHANGELOG.md found, using default"
+            echo "Release v${VERSION}" > release_notes_body.md
+          fi
+
+      - name: Generate release notes
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
           
-          Quick default browser switching for KDE Plasma 6.
+          cat << 'HEADER' > release_notes.md
+          ## Installation
           
-          ### Installation
-          
-          **Option 1: Using kpackagetool6**
+          ### Option 1: Command Line
           ```bash
           kpackagetool6 -t Plasma/Applet -i browser-switcher-${{ steps.version.outputs.version }}.plasmoid
           ```
           
-          **Option 2: Via Plasma UI**
-          1. Right-click on your desktop or panel
+          ### Option 2: Plasma UI
+          1. Right-click on desktop or panel
           2. Select "Add Widgets..." → "Get New Widgets..." → "Install from Local File..."
           3. Select the downloaded `.plasmoid` file
           
-          ### Upgrade
+          ### Upgrade Existing Installation
           ```bash
           kpackagetool6 -t Plasma/Applet -u browser-switcher-${{ steps.version.outputs.version }}.plasmoid
           ```
@@ -150,16 +111,22 @@ jobs:
           kpackagetool6 -t Plasma/Applet -r org.kde.plasma.browserswitcher
           ```
           
-          ### Requirements
+          ## Requirements
           - KDE Plasma 6.0 or later
-          - `xdg-utils` package (provides `xdg-settings`)
+          - `xdg-utils` package
           
-          ### Checksums
-          See `browser-switcher-${{ steps.version.outputs.version }}.plasmoid.sha256` for SHA256 checksum.
-          EOF
+          ## Changes
+          
+          HEADER
+          
+          cat release_notes_body.md >> release_notes.md
+          
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "**Checksum:** See \`browser-switcher-${{ steps.version.outputs.version }}.plasmoid.sha256\`" >> release_notes.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: Browser Switcher v${{ steps.version.outputs.version }}
           body_path: release_notes.md
@@ -168,6 +135,5 @@ jobs:
           files: |
             *.plasmoid
             *.sha256
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

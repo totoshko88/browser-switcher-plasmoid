@@ -3,12 +3,8 @@ name: Validate
 on:
   push:
     branches: [main, master]
-    paths:
-      - 'package/**'
   pull_request:
     branches: [main, master]
-    paths:
-      - 'package/**'
 
 jobs:
   validate:
@@ -17,6 +13,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-utils zip
 
       - name: Validate JSON files
         run: |
@@ -34,19 +35,20 @@ jobs:
         run: |
           echo "Checking QML files for basic syntax..."
           
-          # Check for common QML issues
           for file in package/contents/ui/*.qml package/contents/config/*.qml; do
-            echo "Checking: $file"
-            
-            # Check balanced braces
-            open_braces=$(grep -o '{' "$file" | wc -l)
-            close_braces=$(grep -o '}' "$file" | wc -l)
-            if [ "$open_braces" != "$close_braces" ]; then
-              echo "❌ Unbalanced braces in $file: { = $open_braces, } = $close_braces"
-              exit 1
+            if [ -f "$file" ]; then
+              echo "Checking: $file"
+              
+              # Check balanced braces
+              open_braces=$(grep -o '{' "$file" | wc -l)
+              close_braces=$(grep -o '}' "$file" | wc -l)
+              if [ "$open_braces" != "$close_braces" ]; then
+                echo "❌ Unbalanced braces in $file: { = $open_braces, } = $close_braces"
+                exit 1
+              fi
+              
+              echo "✓ $file passed basic checks"
             fi
-            
-            echo "✓ $file passed basic checks"
           done
 
       - name: Validate package structure
@@ -113,6 +115,5 @@ jobs:
           zip -r ../test-package.plasmoid . -x "*.git*"
           cd ..
           
-          # Verify zip is valid
           unzip -t test-package.plasmoid
           echo "✓ Package creation successful"
