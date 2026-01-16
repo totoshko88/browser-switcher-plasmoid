@@ -13,9 +13,10 @@ PlasmaComponents.ItemDelegate {
     property string browserName: ""
     property string browserIcon: "web-browser"
     property bool isCurrentBrowser: false
+    property bool isJustSelected: false
 
     highlighted: isCurrentBrowser
-    
+
     contentItem: RowLayout {
         spacing: Kirigami.Units.smallSpacing
 
@@ -29,40 +30,29 @@ PlasmaComponents.ItemDelegate {
         // Browser name
         PlasmaComponents.Label {
             Layout.fillWidth: true
-            text: browserName
+            text: isCurrentBrowser ? i18n("%1 (current)", browserName) : browserName
             elide: Text.ElideRight
         }
 
-        // Checkmark for current browser
+        // Success indicator for just-selected browser
         Kirigami.Icon {
             Layout.preferredWidth: Kirigami.Units.iconSizes.small
             Layout.preferredHeight: Kirigami.Units.iconSizes.small
-            source: "checkmark"
-            visible: isCurrentBrowser
-            color: Kirigami.Theme.positiveTextColor
+            source: "emblem-ok-symbolic"
+            visible: isJustSelected || isCurrentBrowser
+            color: isJustSelected ? Kirigami.Theme.positiveTextColor : Kirigami.Theme.textColor
+
+            // Pulse animation for just-selected state
+            SequentialAnimation on opacity {
+                running: isJustSelected
+                loops: 2
+                NumberAnimation { to: 0.4; duration: 200 }
+                NumberAnimation { to: 1.0; duration: 200 }
+            }
         }
     }
 
-    // Hover effect
-    background: Rectangle {
-        color: {
-            if (delegateRoot.pressed) {
-                return Qt.rgba(Kirigami.Theme.highlightColor.r, 
-                              Kirigami.Theme.highlightColor.g, 
-                              Kirigami.Theme.highlightColor.b, 0.3)
-            } else if (delegateRoot.hovered || delegateRoot.highlighted) {
-                return Qt.rgba(Kirigami.Theme.highlightColor.r, 
-                              Kirigami.Theme.highlightColor.g, 
-                              Kirigami.Theme.highlightColor.b, 0.15)
-            }
-            return "transparent"
-        }
-        radius: Kirigami.Units.smallSpacing
-        
-        Behavior on color {
-            ColorAnimation {
-                duration: Kirigami.Units.shortDuration
-            }
-        }
-    }
+    // Keyboard activation
+    Keys.onReturnPressed: delegateRoot.clicked()
+    Keys.onSpacePressed: delegateRoot.clicked()
 }
