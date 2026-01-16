@@ -1,0 +1,118 @@
+name: Validate
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'package/**'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'package/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          echo "Validating metadata.json..."
+          python3 -c "import json; json.load(open('package/metadata.json'))"
+          echo "✓ metadata.json is valid"
+
+      - name: Validate XML files
+        run: |
+          echo "Validating main.xml..."
+          xmllint --noout package/contents/config/main.xml
+          echo "✓ main.xml is valid"
+
+      - name: Check QML syntax
+        run: |
+          echo "Checking QML files for basic syntax..."
+          
+          # Check for common QML issues
+          for file in package/contents/ui/*.qml package/contents/config/*.qml; do
+            echo "Checking: $file"
+            
+            # Check balanced braces
+            open_braces=$(grep -o '{' "$file" | wc -l)
+            close_braces=$(grep -o '}' "$file" | wc -l)
+            if [ "$open_braces" != "$close_braces" ]; then
+              echo "❌ Unbalanced braces in $file: { = $open_braces, } = $close_braces"
+              exit 1
+            fi
+            
+            echo "✓ $file passed basic checks"
+          done
+
+      - name: Validate package structure
+        run: |
+          echo "Checking required files..."
+          
+          required_files=(
+            "package/metadata.json"
+            "package/contents/ui/main.qml"
+          )
+          
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing: $file"
+              exit 1
+            fi
+            echo "✓ Found: $file"
+          done
+
+      - name: Check metadata fields
+        run: |
+          echo "Validating metadata fields..."
+          
+          python3 << 'EOF'
+          import json
+          import sys
+          
+          with open('package/metadata.json') as f:
+              data = json.load(f)
+          
+          required_fields = {
+              'KPlugin': ['Name', 'Description', 'Icon', 'Id', 'Version'],
+          }
+          
+          errors = []
+          
+          for section, fields in required_fields.items():
+              if section not in data:
+                  errors.append(f"Missing section: {section}")
+                  continue
+              for field in fields:
+                  if field not in data[section]:
+                      errors.append(f"Missing field: {section}.{field}")
+          
+          if 'X-Plasma-API-Minimum-Version' not in data:
+              errors.append("Missing: X-Plasma-API-Minimum-Version")
+          
+          if errors:
+              print("❌ Metadata validation failed:")
+              for e in errors:
+                  print(f"  - {e}")
+              sys.exit(1)
+          
+          print("✓ All required metadata fields present")
+          print(f"  Name: {data['KPlugin']['Name']}")
+          print(f"  Version: {data['KPlugin']['Version']}")
+          print(f"  Plasma API: {data.get('X-Plasma-API-Minimum-Version', 'N/A')}")
+          EOF
+
+      - name: Test package creation
+        run: |
+          echo "Testing package creation..."
+          cd package
+          zip -r ../test-package.plasmoid . -x "*.git*"
+          cd ..
+          
+          # Verify zip is valid
+          unzip -t test-package.plasmoid
+          echo "✓ Package creation successful"
